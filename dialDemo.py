@@ -9,6 +9,9 @@ from http.client import HTTPResponse
 
 # Credits: https://stackoverflow.com/questions/47686827/how-to-parse-http-raw-bytes-and-get-the-http-content-in-python
 
+# CHANGE THIS IF YOU HAVE A DEFAULT DIAL SERVICE IN YOUR NETWORK FOR YOUR DEMO.
+# THIS WILL ALLOW YOU TO SKIP DIAL SERVICE DISCOVERY 
+defaultDialRestSeviceUrl = 'http://10.0.4.215:8080/ws/app/'
 
 class BytesIOSocket:
     def __init__(self, content):
@@ -29,9 +32,7 @@ def main():
     dialRestServiceUrl = discoverDialService()
     useDialRestService(dialRestServiceUrl)
 
-
-def discoverDialService():
-    defaultDialRestSeviceUrl = 'http://10.0.4.215:8080/ws/app/'
+def discoverDialService():    
     while True: 
         answer = input('Do you want to skip DIAL Service Discovery and use http://10.0.4.215:8080/ws/app/? (Y/N): ')
         if answer == 'Y': 
