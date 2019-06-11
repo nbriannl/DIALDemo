@@ -2,6 +2,7 @@ import socket
 import urllib3
 import requests
 import json
+import random
 import urllib
 import xml.etree.ElementTree as ET
 from io import BytesIO
@@ -161,9 +162,10 @@ def pickCommand():
                   '(2) Launch an application\n' \
                   '(3) Close an application\n' \
                   '(4) Query all DIAL enabled app names in registry\n' \
+                  '(5) Launch Youtube with DIAL payload\n' \
                   '(0) End demo')
             action = int(input('Option: '))
-            if action > 0 and action < 5:
+            if action > 0 and action < 6:
                 printBottomBorder('PICK AN APPLICATION ACTION')        
                 return action
             elif action == 0: exit()
@@ -193,6 +195,8 @@ def executeCommand(command, appInstances, dialRestServiceUrl):
             if isDeleted: appInstances.remove(appToDeleteInstanceUrl)
     elif command == 4:
         queryAll(dialRestServiceUrl)
+    elif command == 5:
+        lauchYoutubeWithPayload(dialRestServiceUrl, appInstances)
     return appInstances
 
 def getAppResourceUrl(dialRestServiceUrl):
@@ -319,6 +323,66 @@ def queryAll(dialRestServiceUrl):
             print(appName)
             print(appInfoQueryResponse.content.decode())
     printBottomBorder('QUERYING REGISTERED APPS NAMES')     
+
+def lauchYoutubeWithPayload(dialRestServiceUrl, appInstances):
+    if not dialRestServiceUrl.endswith('/'):
+        print('Appending / to {}', dialRestServiceUrl)
+        dialRestServiceUrl = dialRestServiceUrl + '/'
+        print('Result: {}', dialRestServiceUrl)
+    appResourceUrl = dialRestServiceUrl + 'YouTube'
+    print('The Application Resource URL is: {}'.format(appResourceUrl))
+    printTopBorder('LAUNCHING APPLICATION')                    
+    headers = {
+        'friendlyName': 'dialClientDevice'
+    }
+    video_ids = ['Y9_zIwJtKzI', 'kvTc1z2jWgE', '020g-0hhCAU']
+    video_id = random.choice(video_ids)
+    payload = {
+        'v': video_id
+    }
+    encodedPayload = urllib.parse.urlencode(payload)
+    appLaunchResponse = requests.post(appResourceUrl, data=encodedPayload, headers=headers)
+    statusCode = appLaunchResponse.status_code
+    print('DIAL Payload: {}'.format(str(appLaunchResponse.request.body)))
+    printHttpHeaders(appLaunchResponse.request, 'APPLICATION LAUNCH', isRequest=True)
+    printHttpHeaders(appLaunchResponse, 'APPLICATION LAUNCH' )
+    # DIAL Specifications page 16-17
+    if (statusCode == 404):
+        print('App Recognised || Message Body || Application state')
+        print('No             || any          || n/a')
+    elif (statusCode == 413):
+        print('App Recognised || Message Body || Application state')
+        print('Yes            || too long     || n/a')
+    elif (statusCode == 201):
+        print('App Recognised || Message Body || Application state')
+        print('Yes            || empty        || Not running or hidden')
+        print('Yes            || non-empty    || Not running or hidden')
+        print('APPLICATION STARTED')
+        appInstanceUrl = appLaunchResponse.headers['location']
+        print('The Application Instance URL is: {}'.format(appInstanceUrl))
+        print('This may be used to stop the running instance of the application')
+        if appInstanceUrl not in appInstances: appInstances.append(appInstanceUrl)
+        print('Apps started')
+        printAppInstances(appInstances)
+    elif (statusCode == 200):
+        print('App Recognised || Message Body || Application state')
+        print('Yes            || empty        || Starting*')
+        print('Yes            || non-empty    || Starting*')
+        print('Yes            || empty        || Running')
+        print('Yes            || non-empty    || Running')
+        print('* App can be started by DIAL or by any other means, eg: built in menu')
+    elif (statusCode == 501):
+        print('App Recognised || Message Body || Application state')
+        print('Yes            || non-empty    || Running')
+        print('APPLICATION DOES NOT SUPPORT ARGUMENTS OR FAILED TO PROCESS ARGUMENTS')
+    elif (statusCode == 403):
+        print('App launch request from unknown DIAL client v2.1 or higher (page 17)')
+    elif (statusCode == 503):
+        print('Application cannot start successfully or re-started for any reason (page 17)')
+    else:
+        print('Status code not specified in DIAL specs, check the specs just in case')
+    printBottomBorder('LAUNCHING APPLICATION')                    
+    return appInstances
 
 def printAppInstances(appInstances):
     for index, appInstanceUrl in enumerate(appInstances):
