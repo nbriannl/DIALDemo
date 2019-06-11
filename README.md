@@ -3,7 +3,8 @@ This is a simple demo for the DIAL Protocol v2.2 written in Python based on the 
 
 ## Setup
 - Install any dependencies via `pip`
-- Run `python3 DIALDemo`  
+- Turn on any DIAL-enabled devices (i.e. TVs that support DIAL).
+- Run `python3 DIALDemo.py`  
   - After running DIAL Service Discovery once, you may have a default DIAL server you would like to play around with. You can replace the URL by changing the variable `defaultDialRestSeviceUrl` in `dialDemo.py`.
 
 ## DIAL concepts not covered by the Demo
